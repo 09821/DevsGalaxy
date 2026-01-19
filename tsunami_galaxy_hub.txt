@@ -1,0 +1,764 @@
+-- Tsunami for Brainrots v1 Galaxy Hub
+-- Galaxy UI Theme Script
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+
+local Player = Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+local Humanoid = Character:WaitForChild("Humanoid")
+
+-- Variables
+local selectedRarity = nil
+local selectedBrainrot = nil
+local espEnabled = false
+local espObjects = {}
+local tweening = false
+local speedGlitchEnabled = false
+local originalWalkSpeed = 16
+
+-- Create ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TsunamiGalaxyHub"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+if gethui then
+    ScreenGui.Parent = gethui()
+elseif syn and syn.protect_gui then
+    syn.protect_gui(ScreenGui)
+    ScreenGui.Parent = CoreGui
+else
+    ScreenGui.Parent = CoreGui
+end
+
+-- Main Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 550, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -275, 0.5, -200)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+MainFrame.BackgroundTransparency = 0.3
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+
+-- Add UICorner for rounded edges
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 15)
+MainCorner.Parent = MainFrame
+
+-- RGB Border
+local RGBBorder = Instance.new("UIStroke")
+RGBBorder.Thickness = 3
+RGBBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+RGBBorder.Parent = MainFrame
+
+-- RGB Animation
+spawn(function()
+    while true do
+        for i = 0, 1, 0.01 do
+            RGBBorder.Color = Color3.fromHSV(i, 1, 1)
+            task.wait(0.05)
+        end
+    end
+end)
+
+-- Title Bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Name = "TitleBar"
+TitleBar.Size = UDim2.new(1, 0, 0, 40)
+TitleBar.BackgroundColor3 = Color3.fromRGB(20, 10, 35)
+TitleBar.BackgroundTransparency = 0.2
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 15)
+TitleCorner.Parent = TitleBar
+
+-- Title Text
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(0, 400, 1, 0)
+TitleLabel.Position = UDim2.new(0, 15, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "Tsunami for brainrots v1 galaxy hub"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 16
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = TitleBar
+
+-- Minimize Button
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+MinimizeBtn.Position = UDim2.new(1, -100, 0, 5)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
+MinimizeBtn.Text = "_"
+MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeBtn.TextSize = 18
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.Parent = TitleBar
+
+local MinBtnCorner = Instance.new("UICorner")
+MinBtnCorner.CornerRadius = UDim.new(0, 8)
+MinBtnCorner.Parent = MinimizeBtn
+
+-- Maximize Button
+local MaximizeBtn = Instance.new("TextButton")
+MaximizeBtn.Size = UDim2.new(0, 30, 0, 30)
+MaximizeBtn.Position = UDim2.new(1, -65, 0, 5)
+MaximizeBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
+MaximizeBtn.Text = "□"
+MaximizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MaximizeBtn.TextSize = 16
+MaximizeBtn.Font = Enum.Font.GothamBold
+MaximizeBtn.Visible = false
+MaximizeBtn.Parent = TitleBar
+
+local MaxBtnCorner = Instance.new("UICorner")
+MaxBtnCorner.CornerRadius = UDim.new(0, 8)
+MaxBtnCorner.Parent = MaximizeBtn
+
+-- Close Button
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -30, 0, 5)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 16
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = TitleBar
+
+local CloseBtnCorner = Instance.new("UICorner")
+CloseBtnCorner.CornerRadius = UDim.new(0, 8)
+CloseBtnCorner.Parent = CloseBtn
+
+-- Content Container
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Size = UDim2.new(1, 0, 1, -40)
+ContentFrame.Position = UDim2.new(0, 0, 0, 40)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Parent = MainFrame
+
+-- Sidebar
+local Sidebar = Instance.new("Frame")
+Sidebar.Size = UDim2.new(0, 140, 1, 0)
+Sidebar.BackgroundColor3 = Color3.fromRGB(25, 15, 40)
+Sidebar.BackgroundTransparency = 0.4
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = ContentFrame
+
+-- Main Content Area
+local MainContent = Instance.new("Frame")
+MainContent.Size = UDim2.new(1, -140, 1, 0)
+MainContent.Position = UDim2.new(0, 140, 0, 0)
+MainContent.BackgroundTransparency = 1
+MainContent.Parent = ContentFrame
+
+-- Tab System
+local currentTab = nil
+local tabs = {}
+
+local function createTab(name)
+    local tabFrame = Instance.new("ScrollingFrame")
+    tabFrame.Name = name .. "Tab"
+    tabFrame.Size = UDim2.new(1, -20, 1, -20)
+    tabFrame.Position = UDim2.new(0, 10, 0, 10)
+    tabFrame.BackgroundTransparency = 1
+    tabFrame.BorderSizePixel = 0
+    tabFrame.ScrollBarThickness = 6
+    tabFrame.Visible = false
+    tabFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    tabFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    tabFrame.Parent = MainContent
+    
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 10)
+    layout.Parent = tabFrame
+    
+    tabs[name] = tabFrame
+    return tabFrame
+end
+
+local function switchTab(name)
+    for tabName, tab in pairs(tabs) do
+        tab.Visible = (tabName == name)
+    end
+    currentTab = name
+end
+
+-- Create Tab Buttons
+local function createTabButton(name, position)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -10, 0, 40)
+    btn.Position = UDim2.new(0, 5, 0, position)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 25, 60)
+    btn.Text = name
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 14
+    btn.Font = Enum.Font.GothamBold
+    btn.Parent = Sidebar
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = btn
+    
+    btn.MouseButton1Click:Connect(function()
+        switchTab(name)
+    end)
+    
+    return btn
+end
+
+-- Create Tabs
+createTabButton("Main", 10)
+createTabButton("Speed Glitch & more", 60)
+
+local MainTab = createTab("Main")
+local SpeedTab = createTab("Speed Glitch & more")
+
+-- Helper function to create buttons
+local function createButton(parent, text, position, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 35)
+    btn.Position = position
+    btn.BackgroundColor3 = Color3.fromRGB(60, 40, 90)
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 13
+    btn.Font = Enum.Font.Gotham
+    btn.Parent = parent
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = btn
+    
+    if callback then
+        btn.MouseButton1Click:Connect(callback)
+    end
+    
+    return btn
+end
+
+-- Helper function to create checkbox buttons
+local function createCheckbox(parent, text, position, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 35)
+    frame.Position = position
+    frame.BackgroundColor3 = Color3.fromRGB(60, 40, 90)
+    frame.Parent = parent
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = frame
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -40, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 13
+    label.Font = Enum.Font.Gotham
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.Parent = frame
+    
+    local checkbox = Instance.new("TextButton")
+    checkbox.Size = UDim2.new(0, 25, 0, 25)
+    checkbox.Position = UDim2.new(1, -30, 0.5, -12.5)
+    checkbox.BackgroundColor3 = Color3.fromRGB(40, 25, 60)
+    checkbox.Text = ""
+    checkbox.Parent = frame
+    
+    local checkCorner = Instance.new("UICorner")
+    checkCorner.CornerRadius = UDim.new(0, 5)
+    checkCorner.Parent = checkbox
+    
+    local checked = false
+    
+    checkbox.MouseButton1Click:Connect(function()
+        checked = not checked
+        checkbox.BackgroundColor3 = checked and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(40, 25, 60)
+        if callback then
+            callback(checked)
+        end
+    end)
+    
+    return frame, checkbox
+end
+
+-- Main Tab Content
+local SelectRarityBtn = createButton(MainTab, "Select Rarity", UDim2.new(0, 0, 0, 0), function()
+    -- Create selection UI
+    local SelectionUI = Instance.new("Frame")
+    SelectionUI.Size = UDim2.new(0, 250, 0, 300)
+    SelectionUI.Position = UDim2.new(0.5, -125, 0.5, -150)
+    SelectionUI.BackgroundColor3 = Color3.fromRGB(25, 15, 40)
+    SelectionUI.BackgroundTransparency = 0.1
+    SelectionUI.BorderSizePixel = 0
+    SelectionUI.Parent = ScreenGui
+    
+    local selCorner = Instance.new("UICorner")
+    selCorner.CornerRadius = UDim.new(0, 10)
+    selCorner.Parent = SelectionUI
+    
+    local selStroke = Instance.new("UIStroke")
+    selStroke.Thickness = 2
+    selStroke.Color = Color3.fromRGB(100, 100, 200)
+    selStroke.Parent = SelectionUI
+    
+    -- Top buttons
+    local SelectAllBtn = Instance.new("TextButton")
+    SelectAllBtn.Size = UDim2.new(0.45, 0, 0, 30)
+    SelectAllBtn.Position = UDim2.new(0.025, 0, 0, 10)
+    SelectAllBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+    SelectAllBtn.Text = "Select All"
+    SelectAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SelectAllBtn.TextSize = 12
+    SelectAllBtn.Font = Enum.Font.Gotham
+    SelectAllBtn.Parent = SelectionUI
+    
+    local saCorner = Instance.new("UICorner")
+    saCorner.CornerRadius = UDim.new(0, 6)
+    saCorner.Parent = SelectAllBtn
+    
+    local CloseSelBtn = Instance.new("TextButton")
+    CloseSelBtn.Size = UDim2.new(0.45, 0, 0, 30)
+    CloseSelBtn.Position = UDim2.new(0.525, 0, 0, 10)
+    CloseSelBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+    CloseSelBtn.Text = "Close"
+    CloseSelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseSelBtn.TextSize = 12
+    CloseSelBtn.Font = Enum.Font.Gotham
+    CloseSelBtn.Parent = SelectionUI
+    
+    local csCorner = Instance.new("UICorner")
+    csCorner.CornerRadius = UDim.new(0, 6)
+    csCorner.Parent = CloseSelBtn
+    
+    -- Scrolling list
+    local ScrollList = Instance.new("ScrollingFrame")
+    ScrollList.Size = UDim2.new(1, -20, 1, -60)
+    ScrollList.Position = UDim2.new(0, 10, 0, 50)
+    ScrollList.BackgroundTransparency = 1
+    ScrollList.ScrollBarThickness = 4
+    ScrollList.Parent = SelectionUI
+    
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.Padding = UDim.new(0, 5)
+    listLayout.Parent = ScrollList
+    
+    -- Get rarities from workspace
+    local workspace = game:GetService("Workspace")
+    local activeBrainrots = workspace:FindFirstChild("ActiveBrainrots")
+    
+    if activeBrainrots then
+        for _, rarity in pairs(activeBrainrots:GetChildren()) do
+            if rarity:IsA("Folder") then
+                local rarityBtn = Instance.new("TextButton")
+                rarityBtn.Size = UDim2.new(1, 0, 0, 30)
+                rarityBtn.BackgroundColor3 = Color3.fromRGB(50, 35, 70)
+                rarityBtn.Text = rarity.Name
+                rarityBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                rarityBtn.TextSize = 12
+                rarityBtn.Font = Enum.Font.Gotham
+                rarityBtn.Parent = ScrollList
+                
+                local rbCorner = Instance.new("UICorner")
+                rbCorner.CornerRadius = UDim.new(0, 6)
+                rbCorner.Parent = rarityBtn
+                
+                rarityBtn.MouseButton1Click:Connect(function()
+                    selectedRarity = rarity.Name
+                    SelectionUI:Destroy()
+                end)
+            end
+        end
+    end
+    
+    ScrollList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y)
+    
+    CloseSelBtn.MouseButton1Click:Connect(function()
+        SelectionUI:Destroy()
+    end)
+end)
+
+-- ESP Toggle
+local ESPToggle, ESPCheckbox = createCheckbox(MainTab, "Enable ESP", UDim2.new(0, 0, 0, 45), function(enabled)
+    espEnabled = enabled
+    
+    if not enabled then
+        -- Clear all ESP
+        for _, espObj in pairs(espObjects) do
+            if espObj then
+                espObj:Destroy()
+            end
+        end
+        espObjects = {}
+    end
+end)
+
+-- Select Brainrots Button
+local SelectBrainrotBtn = createButton(MainTab, "Select Brainrots", UDim2.new(0, 0, 0, 90), function()
+    if not selectedRarity then
+        warn("Please select a rarity first!")
+        return
+    end
+    
+    -- Similar to Select Rarity but shows models
+    local SelectionUI = Instance.new("Frame")
+    SelectionUI.Size = UDim2.new(0, 250, 0, 300)
+    SelectionUI.Position = UDim2.new(0.5, -125, 0.5, -150)
+    SelectionUI.BackgroundColor3 = Color3.fromRGB(25, 15, 40)
+    SelectionUI.BackgroundTransparency = 0.1
+    SelectionUI.BorderSizePixel = 0
+    SelectionUI.Parent = ScreenGui
+    
+    local selCorner = Instance.new("UICorner")
+    selCorner.CornerRadius = UDim.new(0, 10)
+    selCorner.Parent = SelectionUI
+    
+    local CloseSelBtn = Instance.new("TextButton")
+    CloseSelBtn.Size = UDim2.new(1, -20, 0, 30)
+    CloseSelBtn.Position = UDim2.new(0, 10, 0, 10)
+    CloseSelBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+    CloseSelBtn.Text = "Close"
+    CloseSelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseSelBtn.TextSize = 12
+    CloseSelBtn.Font = Enum.Font.Gotham
+    CloseSelBtn.Parent = SelectionUI
+    
+    local csCorner = Instance.new("UICorner")
+    csCorner.CornerRadius = UDim.new(0, 6)
+    csCorner.Parent = CloseSelBtn
+    
+    local ScrollList = Instance.new("ScrollingFrame")
+    ScrollList.Size = UDim2.new(1, -20, 1, -60)
+    ScrollList.Position = UDim2.new(0, 10, 0, 50)
+    ScrollList.BackgroundTransparency = 1
+    ScrollList.ScrollBarThickness = 4
+    ScrollList.Parent = SelectionUI
+    
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.Padding = UDim.new(0, 5)
+    listLayout.Parent = ScrollList
+    
+    local workspace = game:GetService("Workspace")
+    local activeBrainrots = workspace:FindFirstChild("ActiveBrainrots")
+    
+    if activeBrainrots then
+        local rarityFolder = activeBrainrots:FindFirstChild(selectedRarity)
+        if rarityFolder then
+            for _, brainrot in pairs(rarityFolder:GetChildren()) do
+                local brainrotBtn = Instance.new("TextButton")
+                brainrotBtn.Size = UDim2.new(1, 0, 0, 30)
+                brainrotBtn.BackgroundColor3 = Color3.fromRGB(50, 35, 70)
+                brainrotBtn.Text = brainrot.Name
+                brainrotBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                brainrotBtn.TextSize = 12
+                brainrotBtn.Font = Enum.Font.Gotham
+                brainrotBtn.Parent = ScrollList
+                
+                local rbCorner = Instance.new("UICorner")
+                rbCorner.CornerRadius = UDim.new(0, 6)
+                rbCorner.Parent = brainrotBtn
+                
+                brainrotBtn.MouseButton1Click:Connect(function()
+                    selectedBrainrot = brainrot
+                    SelectionUI:Destroy()
+                end)
+            end
+        end
+    end
+    
+    ScrollList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y)
+    
+    CloseSelBtn.MouseButton1Click:Connect(function()
+        SelectionUI:Destroy()
+    end)
+end)
+
+-- TP Brainrots V1
+local TPV1Btn = createButton(MainTab, "TP Brainrots V1", UDim2.new(0, 0, 0, 135), function()
+    if tweening then
+        warn("Please wait for tween to finish!")
+        return
+    end
+    
+    if not selectedBrainrot then
+        warn("Please select a brainrot first!")
+        return
+    end
+    
+    tweening = true
+    
+    local function isWaveNearby()
+        local workspace = game:GetService("Workspace")
+        local activeTsunamis = workspace:FindFirstChild("ActiveTsunamis")
+        if not activeTsunamis then return false end
+        
+        for _, wave in pairs(activeTsunamis:GetChildren()) do
+            if wave.Name:match("Wave") and wave:IsA("BasePart") then
+                local distance = (wave.Position - HumanoidRootPart.Position).Magnitude
+                if distance < 38 then
+                    return true, wave
+                end
+            end
+        end
+        return false
+    end
+    
+    local targetPos = selectedBrainrot:IsA("Model") and selectedBrainrot.PrimaryPart.Position or selectedBrainrot.Position
+    
+    spawn(function()
+        while tweening and Character and HumanoidRootPart do
+            local waveNear, wave = isWaveNearby()
+            
+            if waveNear then
+                -- Go to lowest ground point
+                HumanoidRootPart.CFrame = CFrame.new(HumanoidRootPart.Position.X, workspace.FallenPartsDestroyHeight + 50, HumanoidRootPart.Position.Z)
+                
+                -- Wait for wave to pass
+                repeat
+                    task.wait(0.1)
+                    local dist = wave and (wave.Position - HumanoidRootPart.Position).Magnitude or 100
+                until dist > 20
+                
+                -- Go up
+                HumanoidRootPart.CFrame = HumanoidRootPart.CFrame + Vector3.new(0, 20, 0)
+            else
+                -- Move towards target
+                local direction = (targetPos - HumanoidRootPart.Position).Unit
+                HumanoidRootPart.CFrame = HumanoidRootPart.CFrame + direction * 2
+                
+                if (targetPos - HumanoidRootPart.Position).Magnitude < 5 then
+                    tweening = false
+                    break
+                end
+            end
+            
+            task.wait()
+        end
+    end)
+end)
+
+-- TP Brainrots V2
+local TPV2Btn = createButton(MainTab, "TP Brainrots V2", UDim2.new(0, 0, 0, 180), function()
+    if not selectedBrainrot then
+        warn("Please select a brainrot first!")
+        return
+    end
+    
+    spawn(function()
+        local workspace = game:GetService("Workspace")
+        local activeTsunamis = workspace:FindFirstChild("ActiveTsunamis")
+        
+        -- Shrink wave hitboxes
+        if activeTsunamis then
+            for _, wave in pairs(activeTsunamis:GetChildren()) do
+                if wave.Name:match("Wave") and wave:IsA("BasePart") then
+                    wave.Size = Vector3.new(1, 1, 1)
+                end
+            end
+        end
+        
+        -- Go underground
+        HumanoidRootPart.CFrame = CFrame.new(HumanoidRootPart.Position.X, workspace.FallenPartsDestroyHeight + 27, HumanoidRootPart.Position.Z)
+        task.wait(0.5)
+        
+        -- Float to brainrot
+        local targetPos = selectedBrainrot:IsA("Model") and selectedBrainrot.PrimaryPart.Position or selectedBrainrot.Position
+        
+        while (targetPos - HumanoidRootPart.Position).Magnitude > 5 do
+            local direction = (targetPos - HumanoidRootPart.Position).Unit
+            HumanoidRootPart.CFrame = HumanoidRootPart.CFrame + direction * 2
+            task.wait()
+        end
+        
+        -- Activate proximity prompt
+        local prompt = selectedBrainrot:FindFirstChildOfClass("ProximityPrompt", true)
+        if prompt then
+            fireproximityprompt(prompt)
+        end
+        
+        task.wait(0.3)
+        
+        -- Go down
+        HumanoidRootPart.CFrame = CFrame.new(HumanoidRootPart.Position.X, workspace.FallenPartsDestroyHeight + 27, HumanoidRootPart.Position.Z)
+        task.wait(0.2)
+        
+        -- Move to the side
+        HumanoidRootPart.CFrame = HumanoidRootPart.CFrame + Vector3.new(21, 0, 0)
+        task.wait(0.2)
+        
+        -- Return to spawn
+        local spawnLocation = workspace:FindFirstChild("SpawnLocation") or workspace:FindFirstChildOfClass("SpawnLocation", true)
+        if spawnLocation then
+            HumanoidRootPart.CFrame = spawnLocation.CFrame + Vector3.new(0, 5, 0)
+        end
+    end)
+end)
+
+-- Speed Glitch Tab
+local SpeedGlitchToggle, SpeedCheckbox = createCheckbox(SpeedTab, "Speed Glitch (80x)", UDim2.new(0, 0, 0, 0), function(enabled)
+    speedGlitchEnabled = enabled
+    
+    if enabled then
+        originalWalkSpeed = Humanoid.WalkSpeed
+        Humanoid.WalkSpeed = originalWalkSpeed * 80
+    else
+        Humanoid.WalkSpeed = originalWalkSpeed
+    end
+end)
+
+-- ESP System (Optimized to prevent lag)
+local espUpdateInterval = 0.1
+local lastEspUpdate = 0
+
+RunService.RenderStepped:Connect(function()
+    if not espEnabled or not selectedRarity then return end
+    
+    local currentTime = tick()
+    if currentTime - lastEspUpdate < espUpdateInterval then return end
+    lastEspUpdate = currentTime
+    
+    local workspace = game:GetService("Workspace")
+    local activeBrainrots = workspace:FindFirstChild("ActiveBrainrots")
+    if not activeBrainrots then return end
+    
+    local rarityFolder = activeBrainrots:FindFirstChild(selectedRarity)
+    if not rarityFolder then return end
+    
+    -- Track existing brainrots
+    local currentBrainrots = {}
+    
+    for _, brainrot in pairs(rarityFolder:GetChildren()) do
+        local espId = brainrot:GetFullName()
+        currentBrainrots[espId] = true
+        
+        if not espObjects[espId] then
+            -- Create ESP
+            local billboardGui = Instance.new("BillboardGui")
+            billboardGui.Name = "ESP"
+            billboardGui.AlwaysOnTop = true
+            billboardGui.Size = UDim2.new(0, 200, 0, 50)
+            billboardGui.StudsOffset = Vector3.new(0, 3, 0)
+            billboardGui.Adornee = brainrot:IsA("Model") and brainrot.PrimaryPart or brainrot
+            billboardGui.Parent = brainrot
+            
+            local textLabel = Instance.new("TextLabel")
+            textLabel.Size = UDim2.new(1, 0, 1, 0)
+            textLabel.BackgroundTransparency = 1
+            textLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+            textLabel.TextStrokeTransparency = 0.5
+            textLabel.TextSize = 14
+            textLabel.Font = Enum.Font.GothamBold
+            textLabel.Parent = billboardGui
+            
+            espObjects[espId] = billboardGui
+        end
+        
+        -- Update ESP text
+        if espObjects[espId] and espObjects[espId].Parent then
+            local pos = brainrot:IsA("Model") and brainrot.PrimaryPart and brainrot.PrimaryPart.Position or brainrot:IsA("BasePart") and brainrot.Position
+            if pos then
+                local distance = math.floor((HumanoidRootPart.Position - pos).Magnitude)
+                local moneyValue = brainrot:FindFirstChild("BrainrotMoney") or brainrot:FindFirstChildOfClass("IntValue", true) or brainrot:FindFirstChildOfClass("NumberValue", true)
+                local money = moneyValue and moneyValue.Value or "?"
+                
+                espObjects[espId].TextLabel.Text = string.format("%s\n%d studs | $%s\n[%s]", brainrot.Name, distance, tostring(money), selectedRarity)
+            end
+        end
+    end
+    
+    -- Clean up removed brainrots
+    for espId, espObj in pairs(espObjects) do
+        if not currentBrainrots[espId] then
+            if espObj then
+                espObj:Destroy()
+            end
+            espObjects[espId] = nil
+        end
+    end
+end)
+
+-- Dragging System
+local dragging
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+TitleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- Minimize/Maximize/Close Functionality
+MinimizeBtn.MouseButton1Click:Connect(function()
+    ContentFrame.Visible = false
+    MinimizeBtn.Visible = false
+    MaximizeBtn.Visible = true
+    MainFrame.Size = UDim2.new(0, 550, 0, 40)
+end)
+
+MaximizeBtn.MouseButton1Click:Connect(function()
+    ContentFrame.Visible = true
+    MinimizeBtn.Visible = true
+    MaximizeBtn.Visible = false
+    MainFrame.Size = UDim2.new(0, 550, 0, 400)
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Character respawn handler
+Player.CharacterAdded:Connect(function(char)
+    Character = char
+    HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
+    Humanoid = char:WaitForChild("Humanoid")
+    tweening = false
+    
+    if speedGlitchEnabled then
+        task.wait(0.5)
+        Humanoid.WalkSpeed = originalWalkSpeed * 80
+    end
+end)
+
+-- Initialize
+switchTab("Main")
+
+print("Tsunami for Brainrots v1 Galaxy Hub loaded successfully!")
